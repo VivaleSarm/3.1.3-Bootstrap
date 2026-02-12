@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>New user</title>
+</head>
+<body>
+<form method="post" th:action="@{/admin/user-create}" th:object="${user}">
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-control" th:field="*{firstname}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Lastname</label>
+        <input type="text" class="form-control" th:field="*{lastname}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Age</label>
+        <input type="text" class="form-control" th:field="*{age}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" th:field="*{email}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="text" class="form-control" th:field="*{password}" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Roles (Checkboxes)</label>
+        <div th:each="role : ${allRoles}" class="form-check">
+            <input class="form-check-input" type="checkbox"
+                   th:value="${role.id}"
+                   th:name="selectedRoleIds"
+                   th:id="${'role_' + role.id}">
+            <label class="form-check-label" th:for="${'role_' + role.id}"
+                   th:text="${role.name}"></label>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">Create</button>
+    <a th:href="@{/admin}" class="btn btn-secondary">Cancel</a>
+
+</form>
+</body>
+</html>

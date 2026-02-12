@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile</title>
+</head>
+<body>
+<h1>Profile</h1>
+
+<h2>Personal Info</h2>
+<table border="1">
+    <tr>
+        <td><strong>ID:</strong></td>
+        <td th:text="${user.id}">ID</td>
+    </tr>
+    <tr>
+        <td><strong>Name:</strong></td>
+        <td th:text="${user.firstname + ' ' + user.lastname}">Full Name</td>
+    </tr>
+    <tr>
+        <td><strong>Age:</strong></td>
+        <td th:text="${user.age}">Age</td>
+    </tr>
+    <tr>
+        <td><strong>Email:</strong></td>
+        <td th:text="${user.email}">Email</td>
+    </tr>
+</table>
+
+<h2>My Roles</h2>
+<ul>
+    <li th:each="role : ${user.roles}" th:text="${role.name}">Role</li>
+    <li th:if="${#lists.isEmpty(user.roles)}">No roles assigned</li>
+</ul>
+
+<h2>Actions</h2>
+<p>
+    <a href="/">Home</a> |
+<div sec:authorize="hasRole('ADMIN')">
+    <a th:href="@{/admin/edit/{id}(id=${user.id})}" class="btn btn-warning">Edit</a> |
+</div>
+<br>
+<form th:action="@{/logout}" method="post" style="display: inline;">
+    <button type="submit">Logout</button>
+</form>
+</p>
+</body>
+</html>

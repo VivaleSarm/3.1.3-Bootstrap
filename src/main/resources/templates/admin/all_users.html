@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>All Users</title>
+</head>
+<body>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Email</th>
+        <th>Name</th>
+        <th>Lastname</th>
+        <th>Age</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr th:each="user : ${users}">
+        <td th:text="${user.id}">ID</td>
+        <td th:text="${user.email}">Email</td>
+        <td th:text="${user.firstname}">Name</td>
+        <td th:text="${user.lastname}">Lastname</td>
+        <td th:text="${user.age}">Age</td>
+        <td>
+            <a th:href="@{admin/edit/{id}(id=${user.id})}" target="_blank" class="btn btn-sm btn-warning">Edit</a>
+            <a th:href="@{admin/delete-user/{id}(id=${user.id})}" class="btn btn-sm btn-danger"
+               onclick="return confirm('Are you sure?')">Delete</a>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a th:href="@{admin/user-create}">Create</a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+    </tr>
+</table>
+</body>
+</html>
