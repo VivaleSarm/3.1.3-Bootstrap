@@ -32,6 +32,8 @@ public class UserController {
     @GetMapping()
     public String userInfo(@AuthenticationPrincipal UserDetails userDetails,
                            Model model) {
+        log.info("Called method userInfo");
+
         User user = userService.findUserByEmail(userDetails.getUsername());
         model.addAttribute("user", user);
         return "user/profile";

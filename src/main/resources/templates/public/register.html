@@ -2,43 +2,84 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Registration</title>
+    <title>Registration page</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-<form method="post" th:action="@{/register}" th:object="${user}">
-    <div class="mb-3">
-        <label class="form-label">Name</label>
-        <input type="text" class="form-control" th:field="*{firstname}" required>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Lastname</label>
-        <input type="text" class="form-control" th:field="*{lastname}" required>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Age</label>
-        <input type="text" class="form-control" th:field="*{age}" required>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input type="email" class="form-control" th:field="*{email}" required>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Password</label>
-        <input type="text" class="form-control" th:field="*{password}" required>
-    </div>
-    <div class="mb-3">
-       <label class="form-label">Roles (Checkboxes)</label>
-            <div th:each="role : ${allRoles}" class="form-check">
-                <input class="form-check-input" type="checkbox"
-                       th:value="${role.id}"
-                       th:name="selectedRoleIds"
-                th:id="${'role_' + role.id}">
-                <label class="form-check-label" th:for="${'role_' + role.id}"
-                       th:text="${role.name}"></label>
-            </div>
-    </div>
 
-    <button type="submit" class="btn btn-success">Create</button>
-    <a th:href="@{/login}" class="btn btn-secondary">Cancel</a>
+<div class="container d-flex justify-content-center alight-items-center min-vh-100">
+
+    <div style="width: 100%; max-width: 300px; padding: 20px">
+
+        <h4 class="mb-3 fw-bold text-dark mt-4 ps-1">Create account</h4>
+
+        <form th:action="@{/register}" method="post" th:object="${user}">
+
+            <div class="mb-1">
+                <input type="text"
+                       class="form-control"
+                       th:field="*{firstname}"
+                       placeholder="First name"
+                       required
+                       autofocus>
+            </div>
+
+            <div class="mb-1">
+                <input type="text"
+                       class="form-control"
+                       th:field="*{lastname}"
+                       placeholder="Last name"
+                       required>
+            </div>
+
+            <div class="mb-2">
+                <input type="number"
+                       class="form-control"
+                       th:field="*{age}"
+                       placeholder="Age"
+                       min="1" max="123"
+                       required>
+            </div>
+
+            <div class="mb-1">
+                <input type="text"
+                       class="form-control"
+                       th:field="*{email}"
+                       placeholder="Email address"
+                       required>
+            </div>
+
+            <div class="mb-1">
+                <input type="password"
+                       class="form-control"
+                       th:field="*{password}"
+                       placeholder="Password"
+                       required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small text-muted ps-2">Select roles:</label>
+
+                <div th:each="role : ${allRoles}" class="form-check mb-2">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           th:value="${role.id}"
+                           th:name="selectedRoleIds"
+                           th:id="${'role_' + role.id}">
+                    <label class="form-check-label small"
+                           th:for="${'role_' + role.id}"
+                           th:text="${role.name}"></label>
+                </div>
+            </div>
+
+            <button type="submit" class="mb-2 btn btn-primary w-100">
+                Create
+            </button>
+            <a href="/login" class="btn btn-secondary w-100">
+                Cancel
+            </a>
+        </form>
+    </div>
+</div>
 </body>
 </html>
