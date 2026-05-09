@@ -23,7 +23,6 @@ public class SecurityConfig {
         this.userRepository = userRepository;
     }
 
-
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider(UserDetailsService userDetailsService,
                                                                BCryptPasswordEncoder bCryptPasswordEncoder) {
@@ -32,7 +31,6 @@ public class SecurityConfig {
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
-
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -49,7 +47,6 @@ public class SecurityConfig {
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
@@ -75,6 +72,5 @@ public class SecurityConfig {
         http.authenticationProvider(daoAuthenticationProvider);
         return http.build();
     }
-
 
 }

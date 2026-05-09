@@ -5,6 +5,8 @@ import kata.security.model.Role;
 import kata.security.model.User;
 import kata.security.service.RoleService;
 import kata.security.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +23,7 @@ import java.util.Set;
 @RequestMapping("/register")
 public class RegistrationController {
 
+    private static final Logger log = LoggerFactory.getLogger(RegistrationController.class);
     private final UserService userService;
     private final RoleService roleService;
 
@@ -31,10 +34,12 @@ public class RegistrationController {
 
     @GetMapping
     public String registerForm(Model model) {
+
+        log.info("Called method registerForm");
+
         User user = new User();
         model.addAttribute(user);
         model.addAttribute("allRoles", roleService.findAll());
-
         model.addAttribute("selectedRoleIds", new ArrayList<Long>());
 
         return "public/register";
@@ -42,12 +47,13 @@ public class RegistrationController {
 
     @PostMapping
     public String register(Model model, User user, @RequestParam("selectedRoleIds") List<Long> selectedRoleIds) {
-        List<Role> rolesList = roleService.findByIds(selectedRoleIds);
 
+        log.info("Called method register");
+
+        List<Role> rolesList = roleService.findByIds(selectedRoleIds);
         Set<Role> rolesSet = new HashSet<>(rolesList);
         user.setRoles(rolesSet);
-
-        userService.registerUser(user);
+        userService.save(user);
 
         return "redirect:/login?registered";
     }
