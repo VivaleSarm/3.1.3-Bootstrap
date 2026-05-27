@@ -1,7 +1,7 @@
 package kata.security.controller;
 
 
-import kata.security.model.User;
+import kata.security.dto.UserDto;
 import kata.security.service.RoleService;
 import kata.security.service.UserService;
 import org.slf4j.Logger;
@@ -9,10 +9,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -33,50 +37,87 @@ public class AdminController {
 
     @GetMapping
     public String allUsers(Model model) {
-
         log.info("Called allUsers method");
-        List<User> users = userService.findAllUsers();
+
+        List<UserDto> users = userService.findAllUsers();
+        UserDto currentUser = userService.getCurrentUser();
+
         model.addAttribute("users", users);
-        model.addAttribute("user", userService.getCurrentUser());
+        model.addAttribute("user", currentUser);
         model.addAttribute("allRoles", roleService.findAll());
+        model.addAttribute("userDto", new UserDto());
 
         return "admin/admin";
     }
 
     @PostMapping("/add")
-    public String addUser(@RequestParam String firstName,
-                          @RequestParam String lastName,
-                          @RequestParam int age,
-                          @RequestParam String email,
-                          @RequestParam String password,
-                          @RequestParam(required = false) List<Long> roles) {
+    public String addUser(@Validated(UserDto.Create.class)
+                          @ModelAttribute("userDto") UserDto userDto,
+                          BindingResult result,
+                          RedirectAttributes redirectAttributes,
+                          Model model) {
+        log.info("Called addUser method from AdminController for user: email{}", userDto.getEmail());
 
-        log.info("Called addUser method from AdminController for user: email{}", email);
-        userService.addUser(firstName, lastName, age, email, password, roles);
+        if (result.hasErrors()) {
+            log.warn("Validation failed: {}", result.getAllErrors());
+            model.addAttribute("users", userService.findAllUsers());
+            model.addAttribute("user", userService.getCurrentUser());
+            model.addAttribute("allRoles", roleService.findAll());
+            return "admin/admin";
+        }
+
+        try {
+            UserDto createdUser = userService.addUser(userDto);
+            log.info("User created: id={}", createdUser.getId());
+            redirectAttributes.addFlashAttribute("success", "User created successfully");
+        } catch (IllegalArgumentException e) {
+            log.warn("Failed to create user: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
 
         return "redirect:/admin";
     }
 
     @PostMapping("/edit")
-    public String editUser(@RequestParam Long id,
-                           @RequestParam String firstName,
-                           @RequestParam String lastName,
-                           @RequestParam int age,
-                           @RequestParam String email,
-                           @RequestParam(required = false) String password,
-                           @RequestParam(required = false) List<Long> roles) {
+    public String editUser(@Validated(UserDto.Update.class)
+                           @ModelAttribute("userDto") UserDto userDto,
+                           BindingResult result,
+                           RedirectAttributes redirectAttributes,
+                           Model model) {
+        log.info("Called method editUser from AdminController for user: email={}", userDto.getEmail());
 
-        log.info("Called method editUser from AdminController for user email: {}", email);
-        userService.editUser(id, firstName, lastName, age, email, password, roles);
+        if (result.hasErrors()) {
+            log.warn("Validation failed: {}", result.getAllErrors());
+            model.addAttribute("users", userService.findAllUsers());
+            model.addAttribute("user", userService.getCurrentUser());
+            model.addAttribute("allRoles", roleService.findAll());
+            return "admin/admin";
+        }
+
+        try {
+            UserDto updatedUser = userService.editUser(userDto.getId(), userDto);
+            log.info("User updated: id={}", updatedUser.getId());
+            redirectAttributes.addFlashAttribute("success", "User updated successfully");
+        } catch (IllegalArgumentException e) {
+            log.warn("Failed to update user: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
 
         return "redirect:/admin";
     }
 
     @PostMapping("/delete")
-    public String deleteUser(@RequestParam Long id) {
-
+    public String deleteUser(@RequestParam Long id,
+                             RedirectAttributes redirectAttributes) {
         log.info("Deleting user: id={}", id);
-        userService.deleteById(id);
+
+        try {
+            userService.deleteById(id);
+            redirectAttributes.addFlashAttribute("success", "User deleted successfully");
+        } catch (IllegalArgumentException e) {
+            log.warn("Failed to delete user: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
 
         return "redirect:/admin";
     }

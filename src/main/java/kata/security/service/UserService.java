@@ -1,5 +1,8 @@
 package kata.security.service;
 
+import kata.security.dto.UserDto;
+import kata.security.mapper.UserMapper;
+import kata.security.mapper.UserMapperHelper;
 import kata.security.model.Role;
 import kata.security.model.User;
 import kata.security.repository.UserRepository;
@@ -14,31 +17,43 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UserService implements UserDetailsService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserRepository repository;
-    private final RoleService roleService;
     private final BCryptPasswordEncoder passwordEncoder;
 
+    private final UserMapper userMapper;
+    private final UserMapperHelper userMapperHelper;
+
     @Autowired
-    public UserService(UserRepository repository, RoleService roleService, BCryptPasswordEncoder passwordEncoder) {
+    public UserService(UserRepository repository, RoleService roleService, BCryptPasswordEncoder passwordEncoder, UserMapper userMapper, UserMapperHelper userMapperHelper) {
         this.repository = repository;
-        this.roleService = roleService;
         this.passwordEncoder = passwordEncoder;
+        this.userMapper = userMapper;
+        this.userMapperHelper = userMapperHelper;
     }
 
-    public List<User> findAllUsers() {
-        return repository.findAll();
+    public List<UserDto> findAllUsers() {
+        log.info("Finding all users with roles");
+
+        List<User> users = repository.findAllWithRoles();
+
+        List<UserDto> userDtos = userMapper.toDtoList(users);
+
+        return userDtos;
     }
 
-    public Optional<User> findUserById(Long id) {
-        return repository.findById(id);
+    public UserDto findUserById(Long id) {
+
+        User user = repository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
+
+        return userMapper.toDto(user);
     }
 
     public void save(User user) {
@@ -47,7 +62,15 @@ public class UserService implements UserDetailsService {
     }
 
     public void deleteById(Long id) {
+        log.info("Deleting user: id={}", id);
+
+        if (!repository.existsById(id)) {
+            throw new UsernameNotFoundException("User not found with id: " + id);
+        }
+
         repository.deleteById(id);
+        log.info("User deleted successfully: id={}", id);
+
     }
 
     public User findUserByEmail(String username) {
@@ -59,72 +82,94 @@ public class UserService implements UserDetailsService {
         return repository.findByEmail(email);
     }
 
-    public User getCurrentUser() {
+    public UserDto getCurrentUser() {
+        log.info("Getting current authenticated  user");
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
             throw new IllegalStateException("User not authenticated");
         }
 
         Object principal = auth.getPrincipal();
+        String email;
+
         if (principal instanceof User) {
-            return (User) principal;
+            email = ((User) principal).getEmail();
+        } else if (principal instanceof UserDetails) {
+            email = ((UserDetails) principal).getUsername();
         } else if (principal instanceof String) {
-            return findUserByEmail((String) principal);
+            email = (String) principal;
+        } else {
+            throw new IllegalStateException(
+                    "Unknown principal type: " + principal.getClass().getName()
+            );
         }
 
-        throw new IllegalStateException(
-                "Unknown principal type: " + principal.getClass()
-        );
+        User user = repository.findByEmailWithRoles(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+
+        return userMapper.toDto(user);
+
     }
 
-    public User addUser(String firstName,
-                        String lastName,
-                        int age,
-                        String email,
-                        String password,
-                        List<Long> roles) {
-        log.info("Creating new user: email={}", email);
+        public UserDto addUser (UserDto userDto){
+            log.info("Creating new user: email={}", userDto.getEmail());
 
-        User user = new User();
-        user.setFirstname(firstName);
-        user.setLastname(lastName);
-        user.setAge(age);
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
-
-        if (roles != null && !roles.isEmpty()) {
-            List<Role> roleList = roleService.findByIds(roles);
-            user.setRoles(new HashSet<>(roleList));
-        }
-        return repository.save(user);
-    }
-
-    public void editUser(Long id,
-                         String firstName,
-                         String lastName,
-                         int age,
-                         String email,
-                         String password,
-                         List<Long> roles) {
-        log.info("Editing user: id={}, email={}", id, email);
-
-        Optional<User> userOptional = findUserById(id);
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            user.setFirstname(firstName);
-            user.setLastname(lastName);
-            user.setAge(age);
-            user.setEmail(email);
-
-            if (password != null && !password.trim().isEmpty()) {
-                user.setPassword(password);
+            if (repository.findByEmail(userDto.getEmail()) != null) {
+                throw new IllegalArgumentException(
+                        "User with email " + userDto.getEmail() + " already exists"
+                );
             }
 
-            if (roles != null && !roles.isEmpty()) {
-                List<Role> roleList = roleService.findByIds(roles);
-                user.setRoles(new HashSet<>(roleList));
+            User user = userMapper.toEntity(userDto);
+
+            String encodedPassword = passwordEncoder.encode(userDto.getPassword());
+            user.setPassword(encodedPassword);
+
+            if (userDto.getRoleIds() != null && !userDto.getRoleIds().isEmpty()) {
+                Set<Role> roleSet = userMapperHelper.idsToRoles(userDto.getRoleIds());
+                user.setRoles(roleSet);
             }
-            save(user);
+
+            User savedUser = repository.save(user);
+            log.info("User created successfully: id={}", savedUser.getId());
+
+            return userMapper.toDto(savedUser);
         }
+
+        public UserDto editUser (Long id, UserDto userDto){
+            log.info("Editing user: id={}, email={}", id, userDto.getEmail());
+
+            User user = repository.findById(id)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
+
+            if (!user.getEmail().equals(userDto.getEmail())) {
+                User existingUser = repository.findByEmail(userDto.getEmail());
+                if (existingUser != null) {
+                    throw new IllegalArgumentException(
+                            "Email " + userDto.getEmail() + " is already exist"
+                    );
+                }
+            }
+
+            userMapper.updateEntity(userDto, user);
+
+            if (userDto.getPassword() != null && !userDto.getPassword().trim().isEmpty()) {
+                String encodedPassword = passwordEncoder.encode(userDto.getPassword());
+                user.setPassword(encodedPassword);
+                log.info("Password updated for user id={}", id);
+            }
+
+            if (userDto.getRoleIds() != null) {
+                Set<Role> roles = userMapperHelper.idsToRoles(userDto.getRoleIds());
+                user.setRoles(roles);
+                log.debug("Roles updated for user id={}", id);
+            }
+
+            User updatedUser = repository.save(user);
+            log.info("User updated successfully: id={}", updatedUser.getId());
+
+            return userMapper.toDto(updatedUser);
+        }
+
     }
-}
