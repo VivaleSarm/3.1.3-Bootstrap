@@ -2,11 +2,14 @@ package kata.security.controller;
 
 
 import kata.security.dto.UserDto;
+import kata.security.mapper.UserMapper;
+import kata.security.model.User;
 import kata.security.service.RoleService;
 import kata.security.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -27,23 +30,25 @@ public class AdminController {
     private static final Logger log = LoggerFactory.getLogger(AdminController.class);
     private final UserService userService;
     private final RoleService roleService;
+    private final UserMapper userMapper;
 
     @Autowired
-    public AdminController(UserService userService, RoleService roleService) {
+    public AdminController(UserService userService, RoleService roleService, UserMapper userMapper) {
         this.userService = userService;
         this.roleService = roleService;
+        this.userMapper = userMapper;
     }
 
 
     @GetMapping
-    public String allUsers(Model model) {
+    public String allUsers(Model model, @AuthenticationPrincipal User currentUser) {
         log.info("Called allUsers method");
 
         List<UserDto> users = userService.findAllUsers();
-        UserDto currentUser = userService.getCurrentUser();
+        UserDto currentUserDto = userMapper.toDto(currentUser);
 
         model.addAttribute("users", users);
-        model.addAttribute("user", currentUser);
+        model.addAttribute("user", currentUserDto);
         model.addAttribute("allRoles", roleService.findAll());
         model.addAttribute("userDto", new UserDto());
 
