@@ -10,11 +10,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import org.hibernate.Hibernate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -89,8 +91,15 @@ public class User implements UserDetails {
         this.email = email;
     }
 
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (!Hibernate.isInitialized(roles)) {
+            return Collections.singletonList(
+                    new SimpleGrantedAuthority("ROLE_USER")
+            );
+        }
+
         return roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
                 .collect(Collectors.toList());

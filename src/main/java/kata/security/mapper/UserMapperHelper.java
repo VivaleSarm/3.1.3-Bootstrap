@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
 public class UserMapperHelper {
@@ -28,23 +27,4 @@ public class UserMapperHelper {
         return new HashSet<>(roles);
     }
 
-    public List<String> rolesToNames(Set<Role> roles) {
-        if (roles == null) {
-            return null;
-        }
-
-        return roles.stream()
-                .map(Role::getName)
-                .collect(Collectors.toList());
-    }
-
-    public List<Long> rolesToIds(Set<Role> roles) {
-        if (roles == null) {
-            return null;
-        }
-
-        return roles.stream()
-                .map(Role::getId)
-                .collect(Collectors.toList());
-    }
 }

@@ -10,7 +10,7 @@
 <nav class="navbar navbar-dark bg-dark">
     <div class="container-fluid">
             <span class="navbar-text fw-bold"
-                  th:text="${user.email} + ' with roles: ' + ${#strings.arrayJoin(user.roles.![name], ' ' )}">
+                  th:text="${user.email} + ' with roles: ' + ${#strings.listJoin(user.roleNames, ' ')}">
                 user@mail.ru with roles: USER
             </span>
 
@@ -28,11 +28,6 @@
         <nav class="col-md-3 col-lg-2 d-md-block bg-white border-end pt-3">
             <div class="position-sticky pt-3">
                 <ul class="nav flex-column">
-<!--                    <li class="nav-item mb-1" sec:authorize="hasRole('ADMIN')">-->
-<!--                        <a class="nav-link active bg-primary text-white fw-bold" th:href="@{/admin}">-->
-<!--                            Admin-->
-<!--                        </a>-->
-<!--                    </li>-->
                     <li class="nav-item mb-1" sec:authorize="hasRole('USER')">
                         <a class="nav-link active bg-primary text-white fw-bold rounded-1" th:href="@{/user}">
                             User
@@ -71,9 +66,7 @@
                                     <td class="py-3" th:text="${user.age}">30</td>
                                     <td class="py-3" th:text="${user.email}">user@mail.ru</td>
                                     <td class="py-3">
-                                        <!-- Вывод ролей -->
-                                        <span th:each="role : ${user.roles}"
-                                              th:text="${role.name}"
+                                        <span th:each="roleName : ${user.roleNames}" th:text="${roleName}"
                                               class="me-2">
                                                 USER
                                             </span>

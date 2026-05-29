@@ -79,27 +79,14 @@ public class AdminController {
     }
 
     @PostMapping("/edit")
-    public String editUser(@Validated(UserDto.Update.class)
-                           @ModelAttribute("userDto") UserDto userDto,
-                           BindingResult result,
-                           RedirectAttributes redirectAttributes,
-                           Model model) {
+    public String editUser(@ModelAttribute UserDto userDto,
+                           RedirectAttributes redirectAttributes) {
         log.info("Called method editUser from AdminController for user: email={}", userDto.getEmail());
 
-        if (result.hasErrors()) {
-            log.warn("Validation failed: {}", result.getAllErrors());
-            model.addAttribute("users", userService.findAllUsers());
-            model.addAttribute("user", userService.getCurrentUser());
-            model.addAttribute("allRoles", roleService.findAll());
-            return "admin/admin";
-        }
-
         try {
-            UserDto updatedUser = userService.editUser(userDto.getId(), userDto);
-            log.info("User updated: id={}", updatedUser.getId());
+            userService.editUser(userDto.getId(), userDto);
             redirectAttributes.addFlashAttribute("success", "User updated successfully");
         } catch (IllegalArgumentException e) {
-            log.warn("Failed to update user: {}", e.getMessage());
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
 
